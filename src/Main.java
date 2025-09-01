@@ -1,43 +1,39 @@
-import com.google.gson.FieldNamingPolicy;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args)  {
         Scanner scanner = new Scanner(System.in);
         Gson gson = new GsonBuilder()
-                .setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE)
                 .setPrettyPrinting()
                 .create();
         EntradaUsuario entradaUsuario = new EntradaUsuario();
-        while (true){
+        BuscaCEP buscaCEP = new BuscaCEP();
 
+        while (true){
             String busca = entradaUsuario.lerEntradaUsuaro(scanner);
+
             if(busca.equalsIgnoreCase("0")){
                 System.out.println("Enncerrando...");
                 break;
             }
 
-            String url = "https://viacep.com.br/ws/"+ busca + "/json/";
+            String url = "https://viacep.com.br/ws/"  + busca + "/json/";
+            try {
+                String json = buscaCEP.buscarEndereco(url);
+                CEP cep = gson.fromJson(json,CEP.class);
+                GeradorArquivoJson gerador = new GeradorArquivoJson();
+                gerador.gerarArquivoJson(json,gson);
 
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .build();
-            HttpResponse<String> response = client
-                    .send(request, HttpResponse.BodyHandlers.ofString());
+                System.out.println(json);
+                System.out.println(cep);
+            }catch (RuntimeException e){
+                System.err.println("Erro ao buscar CEP ou salvat o arquivo" + e.getMessage());
+            }
 
-            String json = response.body();
-            CEP cep = gson.fromJson(json,CEP.class);
-            System.out.println(json);
-            System.out.println(cep);
         }
     }
 }
